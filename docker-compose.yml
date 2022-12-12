@@ -1,0 +1,15 @@
+services:
+  main:
+    build: ./main
+    ports:
+      - "5000:5000"
+  rssparser:
+    build: ./RSSParser
+  basichtmlparser:
+    build: ./BasicHTMLParser
+  htmlparser:
+    build: ./HTMLParser
+  docparser:
+    build: ./DocParser
+  pdfparser:
+    build: ./PDFParser

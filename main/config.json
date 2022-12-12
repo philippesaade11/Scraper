@@ -1,0 +1,24 @@
+{
+    "parsers": [
+        {
+            "name": "rssparser",
+            "file_extensions": [".rss", ".xml"],
+            "port": 8000
+        },
+        {
+            "name": "htmlparser",
+            "file_extensions": [".html", ".htm"],
+            "port": 8000
+        },
+        {
+            "name": "docparser",
+            "file_extensions": [".doc", ".docx"],
+            "port": 8000
+        },
+        {
+            "name": "pdfparser",
+            "file_extensions": [".pdf"],
+            "port": 8000
+        }
+    ]
+}
