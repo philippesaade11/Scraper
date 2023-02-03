@@ -1,0 +1,2 @@
+# Dynamic Data Parsing System
+The goal of the project is to design and implement a software that is capable of parsing data from a variety of file types, extracting relevant textual data, and combining them in one standardized format. The software is therefore used to make unstructured file formats more comprehensible and universal. The types of files include Web pages, Word documents, PDF files, RSS feeds, and Images.
