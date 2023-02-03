@@ -11,6 +11,11 @@
             "port": 8000
         },
         {
+            "name": "basichtmlparser",
+            "file_extensions": [],
+            "port": 8000
+        },
+        {
             "name": "docparser",
             "file_extensions": [".doc", ".docx"],
             "port": 8000
@@ -18,6 +23,11 @@
         {
             "name": "pdfparser",
             "file_extensions": [".pdf"],
+            "port": 8000
+        },
+        {
+            "name": "imageparser",
+            "file_extensions": [".jpg", ".jpeg", ".png", ".tiff", ".bmp", ".webp", ".JPG", ".PNG", ".JPEG"],
             "port": 8000
         }
     ]

@@ -7,11 +7,14 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'files/'
 app.config['UPLOAD_EXTENSIONS'] = UPLOAD_EXTENSIONS
 
+ocr_model = None
+detector_model = None
+
 @app.route('/parse', methods=['POST'])
 def parse():
-    include_iframe = bool(request.form.get('data', request.files.get('data', False)))
-    add_images = bool(request.form.get('add_images', request.files.get('add_images', False)))
-    
+    global ocr_model
+    global detector_model
+
     if request.method == 'POST' and ('data' in request.files):
         data = request.files['data']
         filename = secure_filename(data.filename)
@@ -20,16 +23,20 @@ def parse():
             if file_ext not in app.config['UPLOAD_EXTENSIONS']:
                 return jsonify({'error': "File extension not allowed"}), 401
             
-            parser = BasicHTMLParser(data.read())
-            resp = parser.parse(include_iframe=include_iframe, add_images=add_images)
-            return jsonify(resp)
+            filename = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            data.save(filename)
+            parser = ImageParser(filename, ocr_model=ocr_model, detector_model=detector_model)
+            ocr_model = parser.ocr_model
+            detector_model = parser.detector_model
+            return jsonify(parser.parse())
 
-    elif request.method == 'POST' and ('data' in request.form):
+    if request.method == 'POST' and ('data' in request.form):
         data = request.form['data']
-        parser = BasicHTMLParser(data)
-        resp = parser.parse(include_iframe=include_iframe, add_images=add_images)
-        return jsonify(resp)
-        
+        parser = ImageParser(data, ocr_model=ocr_model, detector_model=detector_model)
+        ocr_model = parser.ocr_model
+        detector_model = parser.detector_model
+        return jsonify(parser.parse())
+
     return jsonify({'error': "Data is missing"}), 401
 
 if __name__ == '__main__':

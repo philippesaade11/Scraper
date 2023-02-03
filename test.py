@@ -1,5 +1,10 @@
-import requests
+import subprocess
+import re
+import time
 
-def test_rss():
-    r = requests.post('http://localhost:8000/parse', files = {'data': open('C:\\Users\\96181\\Desktop\\Convaise IDP\\examples\\example-rss.xml','rb')})
-    return r.json()
+while True:
+    output = subprocess.check_output(['docker', 'stats', '--no-stream'])
+    output = output.decode().strip().split('\n')
+    with open('output.csv', 'a+') as f:
+        for i in range(1, len(output)):
+            f.write(re.sub('\s{2,}', ',', output[i]) + f',{time.time()}\n')

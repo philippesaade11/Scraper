@@ -14,17 +14,30 @@ class DocParser(ParserBase):
     Word Document Parser that transforms the documents into simple html pages then uses BasicHTMLParser to extract data.
     
     """
+    parser_name = 'docparser'
     
-    def __init__(self, filename, html_parser_url):
-        self.filename = os.path.abspath(filename)
+    def __init__(self, data, html_parser_url):
+
+        # Check if data is a file location
+        if os.path.exists(data):
+            self.data = data
+        # Check if data is a url
+        else:
+            try:
+                r = requests.get(data)
+                file_ext = guess_extension(r.headers["content-type"].split(";")[0])
+                file_name = f'/app/files/{int(time.time())}.' + file_ext
+                with open(file_name, 'wb') as f:
+                    f.write(r.content)
+                self.data = file_name
+            except:
+                raise Exception("Data is not a valid file location or a URL")
+
         self.html_parser_url = html_parser_url
 
-        if not os.path.exists(self.filename):
-            raise f"{self.filename} is not a valid file location"
-
-        extension = os.path.splitext(self.filename)[1]
+        extension = os.path.splitext(self.data)[1]
         if extension not in UPLOAD_EXTENSIONS:
-            raise f"{extension} is not a valid file extension"
+            raise Exception(f"{extension} is not a valid file extension")
 
         # Transform doc to docx
         if extension == '.doc':
@@ -33,14 +46,14 @@ class DocParser(ParserBase):
                 from win32com import client as wc
 
                 w = wc.Dispatch('Word.Application')
-                doc = w.Documents.Open(self.filename)
-                doc.SaveAs(self.filename+'x', 16)
-                self.filename = self.filename+'x'
+                doc = w.Documents.Open(self.data)
+                doc.SaveAs(self.data+'x', 16)
+                self.data = self.data+'x'
             
             # For other systems
             else:
-                subprocess.call(['lowriter', '--convert-to', 'docx', '--outdir', os.path.dirname(self.filename),  self.filename])
-                self.filename = self.filename+'x'
+                subprocess.call(['lowriter', '--convert-to', 'docx', '--outdir', os.path.dirname(self.data),  self.data])
+                self.data = self.data+'x'
 
         super(DocParser, self).__init__()
 
@@ -55,17 +68,18 @@ class DocParser(ParserBase):
             "src": image_name
         }
                     
-    def parse(self):
-        with open(self.filename, "rb") as docx_file:
+    def parse(self, add_images=False):
+        with open(self.data, "rb") as docx_file:
             htmltrans = mammoth.convert_to_html(docx_file, convert_image=mammoth.images.img_element(self.convert_image))
 
         self.data = f'<html>{htmltrans.value}</html>'
         self.html_messages = htmltrans.messages
 
         json_resp = self._parse_basic_html(self.data)
+        
         self.parsed_data = json_resp['data']
         self.urls = json_resp['urls']
-        return super(DocParser, self).parse()
+        return super(DocParser, self).parse(add_files=add_images)
 
     def _parse_basic_html(self, html):
         json_resp = {}
@@ -73,5 +87,5 @@ class DocParser(ParserBase):
             json_resp = requests.post(self.html_parser_url, data={'data': html})
             json_resp = json_resp.json()
         except:
-            raise "Basic HTML Parser not responding"
+            raise Exception("Basic HTML Parser not responding")
         return json_resp

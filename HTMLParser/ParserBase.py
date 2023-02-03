@@ -1,17 +1,21 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 import uuid
+import os
 
 class ParserBase(ABC):
     group_id = str(uuid.uuid4()) # This groups multiple datatypes together, e.g. in RSS feeds a group defines an item, in a word document it defines a page.
     page_number = 0
     image_path = 'static/'
+    image_serve_url = 'http://main:5000/getimage/'
+    parser_name = ''
     urls = []
+    file_urls = []
     parsed_data = []
     
-    def parse(self):
+    def parse(self, add_files=False):
         return {
             'data': self.parsed_data,
-            'urls': self.urls
+            'urls': self.urls + (self.file_urls if add_files else [])
         }
 
     def _new_group(self):
@@ -45,6 +49,9 @@ class ParserBase(ABC):
         }
 
     def _file_to_json(self, file_type, url, name, tag=''):
+        if os.path.exists(url):
+            url = self.image_serve_url + os.path.split(url)[1] + "?parser=" + self.parser_name
+        self.file_urls.append(url)
         return {
             'datatype': file_type,
             'url': url,

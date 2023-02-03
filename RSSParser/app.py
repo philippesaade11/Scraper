@@ -9,6 +9,8 @@ app.config['UPLOAD_EXTENSIONS'] = UPLOAD_EXTENSIONS
 
 @app.route('/parse', methods=['POST'])
 def parse():
+    add_images = bool(request.form.get('add_images', request.files.get('add_images', False)))
+
     if request.method == 'POST' and ('data' in request.files):
         data = request.files['data']
         filename = secure_filename(data.filename)
@@ -18,7 +20,13 @@ def parse():
                 return jsonify({'error': "File extension not allowed"}), 401
             
             parser = RSSParser(data)
-            return jsonify(parser.parse())
+            return jsonify(parser.parse(add_images=add_images))
+        
+    if request.method == 'POST' and ('data' in request.form):
+        data = request.form['data']
+        parser = RSSParser(data)
+        return jsonify(parser.parse(add_images=add_images))
+
     return jsonify({'error': "File is missing"}), 401
 
 if __name__ == '__main__':

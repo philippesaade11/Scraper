@@ -1,24 +1,31 @@
 from ParserBase import ParserBase
 import lxml.html
-from lxml import etree
 import os
 import requests
 import pandas as pd
 import time
+import json
 
 UPLOAD_EXTENSIONS = ['.html', '.htm']
+
 
 class BasicHTMLParser(ParserBase):
     """
     Basic HTML Parser that takes html tags as a string and outputs the processed json data
     
     """
-    non_text_tags = ['table', 'ul', 'ol', 'img', 'svg', 'audio', 'video']
+    parser_name = 'basichtmlparser'
 
     def __init__(self, data):
 
         # Check if data is valid HTML
-        if lxml.html.fromstring(data).find('.//*') is not None:
+        check = None
+        try:
+            check = lxml.html.fromstring(data).find('.//*')
+        except:
+            pass
+
+        if check is not None:
             self.data = data
             
         # Check if data is a file location
@@ -32,23 +39,29 @@ class BasicHTMLParser(ParserBase):
                 r = requests.get(data)
                 self.data = r.content
             except:
-                raise "Data is not HTML, a valid file location, or a URL"
+                raise Exception("Data is not HTML, a valid file location, or a URL")
 
-        if lxml.html.fromstring(self.data).find('.//*') is None:
-            raise "Data content is not valid HTML"
+        check = None
+        try:
+            check = lxml.html.fromstring(self.data).find('.//*')
+        except:
+            pass
+        if check is None:
+            raise Exception("Data content is not valid HTML")
 
+        self.non_text_tags = ['table', 'ul', 'ol', 'img', 'svg', 'audio', 'video']
         super(BasicHTMLParser, self).__init__()
                 
-    def parse(self, include_iframe=False):
-        if include_iframe:
+    def parse(self, include_iframe=False, add_images=False):
+        if include_iframe and 'iframe' not in self.non_text_tags:
             self.non_text_tags += ['iframe']
 
-        html = etree.HTML(self.data)
+        html = lxml.html.fromstring(self.data)
         elements = self._get_relevant_elements(html)
-        self.parsed_data = list(filter(None, [self._element_to_json(el) for el in elements]))
 
+        self.parsed_data = list(filter(None, [self._element_to_json(el) for el in elements]))
         self.urls = self._get_all_urls(html)
-        return super(BasicHTMLParser, self).parse()
+        return super(BasicHTMLParser, self).parse(add_files=add_images)
 
     def _element_to_json(self, el):
         if el.tag == 'img':
@@ -61,7 +74,7 @@ class BasicHTMLParser(ParserBase):
             image_name = ''
             image_url = os.path.join(self.image_path, f'{image_name}{int(time.time())}.svg')
             with open(image_url, "wb") as out:
-                out.write(etree.tostring(el))
+                out.write(lxml.html.tostring(el))
             return self._file_to_json('image', image_url, image_name, tag=el.tag)
 
         elif (el.tag == 'audio') or (el.tag == 'video'):
@@ -81,8 +94,14 @@ class BasicHTMLParser(ParserBase):
             return self._list_to_json(list_elements, tag=el.tag)
         
         elif el.tag == 'table':
-            table = pd.read_html(lxml.html.tostring(el))[0]
-            return self._table_to_json(table.columns.values.tolist(), table.to_dict(orient='records'), tag=el.tag)
+            table = []
+            try:
+                table = pd.read_html(lxml.html.tostring(el))
+            except:
+                pass
+            if len(table) > 0:
+                table = json.loads(table[0].to_json(orient="split"))
+                return self._table_to_json(table['columns'], table['data'], tag=el.tag)
         
         elif self._element_is_title(el):
             text = self._element_to_text(el)

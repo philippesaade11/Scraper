@@ -5,16 +5,21 @@ import mimetypes
 UPLOAD_EXTENSIONS = ['.rss', '.xml']
 
 class RSSParser(ParserBase):
+    """
+    RSS Parser
+    
+    """
+    parser_name = 'rssparser'
     
     def __init__(self, data):
         rssfeed = feedparser.parse(data)
         if len(rssfeed.entries) == 0:
-            raise "RSS file is invalid"
+            raise Exception("RSS file is invalid")
         
         self.rssfeed = rssfeed
         super(RSSParser, self).__init__()
         
-    def parse(self):
+    def parse(self, add_images=False):
         json_resp = self._extract_title_text(self.rssfeed.feed)
         self.page_number += 1
 
@@ -24,7 +29,7 @@ class RSSParser(ParserBase):
             self.page_number += 1
 
         self.parsed_data = json_resp
-        return super(RSSParser, self).parse()
+        return super(RSSParser, self).parse(add_files=add_images)
 
     def _extract_title_text(self, obj):
         json_resp = []

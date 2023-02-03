@@ -3,13 +3,15 @@ services:
     build: ./main
     ports:
       - "5000:5000"
-  rssparser:
-    build: ./RSSParser
-  basichtmlparser:
-    build: ./BasicHTMLParser
-  htmlparser:
-    build: ./HTMLParser
-  docparser:
-    build: ./DocParser
-  pdfparser:
-    build: ./PDFParser
+  # rssparser:
+  #   build: ./RSSParser
+  # basichtmlparser:
+  #   build: ./BasicHTMLParser
+  # docparser:
+  #   build: ./DocParser
+  # pdfparser:
+  #   build: ./PDFParser
+  imageparser:
+    build: ./ImageParser
+  # htmlparser:
+  #   build: ./HTMLParser
